@@ -46,4 +46,17 @@ def extract(url, table_attribs):
     return df
 
 
-print(extract(url, table_attribs))
+def transform(df):
+    '''
+    transform the gdp to billions from millions and renames column
+
+    '''
+
+    vals = df["GDP_USD_millions"].tolist() #convert to list to manipulate
+    vals = [np.round((float("".join(val.split(','))))/1000, 2) for val in vals] # rounds and converts from currency form to number and divides to get billions
+    df["GDP_USD_millions"] = vals
+    
+    return df.rename(columns={"GDP_USD_millions": "GDP_USD_billions"})
+
+
+print(transform(extract(url, table_attribs)))
