@@ -15,9 +15,10 @@ CSV_path = './Countries_by_GDP.csv'
 
 
 def extract(url, table_attribs):
-    ''' This function extracts the required
-    information from the website and saves it to a dataframe. The
-    function returns the dataframe for further processing. '''
+    '''
+    extracts website content and saves to dataframe, returns dataframe
+
+    '''
 
     response = requests.get(url).text
 
@@ -34,10 +35,11 @@ def extract(url, table_attribs):
     # checking all conditions
     for row in rows:
         col = row.find_all('td')
-        if len(col) != 0:
+        if len(col) != 0:  # row not empty
+            # first col has hyperlink and third not empty
             if col[0].find('a') is not None and '—' not in col[2]:
-                data_dict = {"Country": col[0].a.contents[0],
-                             "GDP_USD_millions": col[2].contents[0]}
+                data_dict = {"Country": col[0].a.contents[0],  # getting first col and first content
+                             "GDP_USD_millions": col[2].contents[0]}  # third col first content
                 df1 = pd.DataFrame(data_dict, index=[0])
                 df = pd.concat([df, df1], ignore_index=True)
 
