@@ -11,7 +11,7 @@ url = 'https://web.archive.org/web/20230902185326/https://en.wikipedia.org/wiki/
 table_attribs = ["Country", "GDP_USD_millions"]
 db_name = 'World_Economies.db'
 table_name = 'Countries_by_GDP'
-CSV_path = './Countries_by_GDP.csv'
+csv_path = './Countries_by_GDP.csv'
 
 
 def extract(url, table_attribs):
@@ -52,11 +52,79 @@ def transform(df):
 
     '''
 
-    vals = df["GDP_USD_millions"].tolist() #convert to list to manipulate
-    vals = [np.round((float("".join(val.split(','))))/1000, 2) for val in vals] # rounds and converts from currency form to number and divides to get billions
+    vals = df["GDP_USD_millions"].tolist()  # convert to list to manipulate
+    # rounds and converts from currency form to number and divides to get billions
+    vals = [np.round((float("".join(val.split(','))))/1000, 2) for val in vals]
     df["GDP_USD_millions"] = vals
-    
+
     return df.rename(columns={"GDP_USD_millions": "GDP_USD_billions"})
 
 
-print(transform(extract(url, table_attribs)))
+def load_to_csv(df, csv_path):
+    '''
+    loads data to csv
+
+    '''
+
+    df.to_csv(csv_path)
+
+
+def load_to_db(df, sql_connection, table_name):
+    '''
+    loads dataframe to database
+
+    '''
+
+    df.to_sql(table_name, sql_connection, if_exists='replace', index=False)
+
+
+def run_query(query_statement, sql_connection):
+    '''
+    runs the query
+
+    '''
+
+    print(query_statement)
+    print(pd.read_sql(query_statement, sql_connection))
+
+
+def log_progress(message):
+    '''
+    logs the actions of function calls
+    '''
+    timestamp_frmt = '%Y-%h-%d-%H:%M:%S'
+    time = datetime.now()
+    timestamp = time.strftime(timestamp_frmt)
+    with open("./etl_project_log.txt", "a") as f:
+        f.write(timestamp + ' : ' + message + '\n')
+
+
+log_progress('Initiating ETL process')
+
+df = extract(url, table_attribs)
+
+log_progress('Data extraction complete. Initiating Transformation process')
+
+df = transform(df)
+
+log_progress('Data transformation complete. Initiating loading process')
+
+load_to_csv(df, csv_path)
+
+log_progress('Data saved to CSV file')
+
+sql_connection = sqlite3.connect('World_GDP.db')
+
+log_progress('SQL Connection initiated.')
+
+load_to_db(df, sql_connection, table_name)
+
+log_progress('Data loaded to Database as table. Running the query')
+
+# want to see the entries with >= 100billion USD in GDP
+query_statement = f"SELECT * from {table_name} WHERE GDP_USD_billions >= 100"
+run_query(query_statement, sql_connection)
+
+log_progress('Process Complete.')
+
+sql_connection.close()
