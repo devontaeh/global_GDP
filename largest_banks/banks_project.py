@@ -7,7 +7,10 @@ from datetime import datetime
 
 url = 'https://web.archive.org/web/20230908091635/https://en.wikipedia.org/wiki/List_of_largest_banks'
 table_attribs =["Bank Name", "MC_USD_Billion"]
-csv_path = "E:\Projects\largest_banks\exchange_rate.csv"
+exchange_rate = "E:\Projects\largest_banks\exchange_rate.csv"
+csv_path = './Largest_banks_data.csv'
+db_name = 'Banks.db'
+table_name = 'Largest_banks'
 
 def log_progress(message):
     '''Logs message and appends to txt file'''
@@ -47,7 +50,7 @@ def extract(url, table_attribs):
 
 
 def transform(df, csv_path):
-    #Transforms data 
+    #Transforms data - added three new data columns of MC in different currencies
     
     exchange_rate = pd.read_csv(csv_path).set_index('Currency').to_dict()['Rate']
     
@@ -59,11 +62,19 @@ def transform(df, csv_path):
 
 
 
-# def load_to_csv(df, output_path):
-
-
-# def load_to_db(df, sql_connection, table_name):
+def load_to_csv(df, output_path):
+    '''
+    loads to csv
+    '''
     
+    df.to_csv(output_path)
+
+
+def load_to_db(df, sql_connection, table_name):
+    '''
+    Loads to SQL database
+    '''
+    df.to_sql(table_name,sql_connection,if_exists='replace', index=False)
 
 # def run_query(query_statement, sql_connection):
     
@@ -72,7 +83,10 @@ def transform(df, csv_path):
 log_progress('Preliminaries complete. Initiating ETL process')
 
 tables = extract(url, table_attribs)
+transform = transform(tables,exchange_rate)
 # print(tables)
-print(transform(tables,csv_path)['MC_EUR_Billion'][4])
-
+print(transform['MC_EUR_Billion'][4])
+load_to_csv(transform,csv_path)
+sql_connection = sqlite3.connect('Banks.db')
+load_to_db(transform,sql_connection, table_name)
 
